@@ -16,7 +16,7 @@ repos:
     hooks:
     - id: flake8
       additional_dependencies: ['pep8-naming==0.11.1', 'flake8-mutable==1.2.0']
-
+      args: ['--max-line-length=120', '--ignore=E203,E501,N806,N816,N817,W503']
 -   repo: https://github.com/pycqa/pydocstyle
     rev: 6.1.1
     hooks:
