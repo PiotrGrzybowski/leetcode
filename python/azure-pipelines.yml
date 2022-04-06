@@ -1,0 +1,58 @@
+pool:
+  vmImage: 'ubuntu-latest'
+
+steps:
+- task: UsePythonVersion@0
+  inputs:
+    versionSpec: '3.8'
+  displayName: Use Python 3.8
+
+- script: git reset $(git merge-base HEAD origin/master) && git add .
+  displayName: Unstage all changes relative to the target branch
+
+- script: pip install pre-commit
+  displayName: Install pre-commit
+
+- script: pre-commit run isort
+  displayName: Imports ordering check
+
+- script: pre-commit run black
+  displayName: Code formatting check
+  condition: succeededOrFailed()
+
+- script: pre-commit run flake8
+  displayName: Linting check
+  condition: succeededOrFailed()
+
+- script: pre-commit run pydocstyle
+  displayName: Docstring convention check
+  condition: succeededOrFailed()
+
+- script: pre-commit run mypy
+  displayName: Static type check
+  condition: succeededOrFailed()
+
+- script: |
+    pip install poetry
+    ./environment/configure-citools.sh $(ARTIFACTS_USER) $(ARTIFACTS_TOKEN) false
+    poetry config virtualenvs.create false
+    poetry install -v
+  displayName: Install requirements
+  condition: succeededOrFailed()
+
+- script: PYTHONPATH=. pytest tests --doctest-modules --junitxml=junit/test-results.xml --cov=. --cov-report=xml --cov-report=html
+  displayName: Run tests
+  condition: succeededOrFailed()
+
+- task: PublishTestResults@2
+  inputs:
+    testResultsFiles: '**/test-*.xml'
+    testRunTitle: 'Publish test results'
+  condition: succeededOrFailed()
+
+- task: PublishCodeCoverageResults@1
+  inputs:
+    codeCoverageTool: Cobertura
+    summaryFileLocation: '$(System.DefaultWorkingDirectory)/**/coverage.xml'
+    reportDirectory: '$(System.DefaultWorkingDirectory)/**/htmlcov'
+  condition: succeededOrFailed()
