@@ -1,11 +1,11 @@
 def is_left(sign: str) -> bool:
-    """Checks if the given sign is left parentheses"""
+    """Checks if the given sign is left parentheses."""
     return sign == "(" or sign == "{" or sign == "["
 
 
 def valid_parentheses(expression: str) -> bool:
     """Checks if given expression parentheses are correct."""
-    mapping = {')': '(', ']': '[', '}': '{'}
+    mapping = {")": "(", "]": "[", "}": "{"}
     stack = []
     for sign in expression:
         if is_left(sign):
@@ -18,7 +18,7 @@ def valid_parentheses(expression: str) -> bool:
     return True
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     assert valid_parentheses("()")
     assert valid_parentheses("([][]{}")
     assert not valid_parentheses("([)")
