@@ -9,3 +9,4 @@ pub mod implement_str_str;
 pub mod maximum_subarray;
 pub mod length_of_last_word;
 pub mod add_binary;
+pub mod sqrt_x;
