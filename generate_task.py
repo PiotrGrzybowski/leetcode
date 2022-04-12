@@ -36,14 +36,16 @@ types = {
         float: "float",
         list[str]: "list[str]",
         list[int]: "list[int]",
+        "None": "None"
     },
     RUST: {
         int: "i32",
         str: "String",
         list[str]: "Vec<String>",
         list[int]: "Vec<i32>",
+        "None": ""
     },
-    GO: {int: "int", str: "string", list[str]: "[]string", list[int]: "[]int"},
+    GO: {int: "int", str: "string", list[str]: "[]string", list[int]: "[]int", "None": ""},
 }
 
 
@@ -56,6 +58,8 @@ def crate_rust_input_value(value: Any, typing: type) -> Any:
         return f"vec!{value}"
     elif typing == list[int]:
         return f"vec!{value}"
+    else:
+        return ""
 
 
 def crate_go_input_value(value: Any, typing: type) -> Any:
@@ -67,6 +71,8 @@ def crate_go_input_value(value: Any, typing: type) -> Any:
         return f"[]string{{{value}}}"
     elif typing == list[int]:
         return f"[]int{{{value}}}"
+    else:
+        return ""
 
 
 def crate_python_input_value(value: Any, typing: type) -> Any:
@@ -78,6 +84,8 @@ def crate_python_input_value(value: Any, typing: type) -> Any:
         return f"{value}"
     elif typing == list[int]:
         return f"{value}"
+    else:
+        return ""
 
 
 def python_test_case(function: str, case: tuple[Any, Any]) -> str:
@@ -133,6 +141,8 @@ def python_default_output(typing) -> Any:
         return f"[]"
     elif typing == list[int]:
         return f"[]"
+    else:
+        return ""
 
 
 def rust_default_output(typing) -> Any:
@@ -144,6 +154,8 @@ def rust_default_output(typing) -> Any:
         return f"vec![]"
     elif typing == list[int]:
         return f"vec![]"
+    else:
+        return ""
 
 
 def go_default_output(typing) -> Any:
@@ -155,16 +167,22 @@ def go_default_output(typing) -> Any:
         return f"[]string{{}}"
     elif typing == list[int]:
         return f"[]int{{}}"
+    else:
+        return ""
 
 
-filename = "remove_duplicates_from_sorted_list"
+filename = "inorder_traversal"
 
-python_function_name = 'remove_duplicates'
+python_function_name = 'inorder_traversal'
 
-inputs = [("head", int)]
-output = int
+inputs = [("root", int)]
+output = list[int]
 tests = [
-    ([(2, int)], (2, int)),
+    # ([([1, 2, 3, 0, 0, 0], list[int]), (3, int), ([2, 5, 6], list[int]), (2, int)], ([1, 2, 2, 3, 5, 6], list[int])),
+    # ([([1, 2, 2, 3, 3, 4, 8, 0, 0, 0, 0, 0], list[int]), (7, int), ([2, 2, 3, 3, 5], list[int]), (5, int)],
+    #  ([1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 5, 8], list[int])),
+    # ([([1], list[int]), (1, int), ([], list[int]), (0, int)], ([1], list[int])),
+    ([(1, int)], ([1,3,2], list[int])),
 ]
 
 python_script_path = Path("python", "algos", f"{filename}.py")
