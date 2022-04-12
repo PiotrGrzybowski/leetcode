@@ -12,3 +12,4 @@ pub mod add_binary;
 pub mod sqrt_x;
 pub mod climb_stairs;
 pub mod remove_duplicates_from_sorted_list;
+pub mod merge_sorted_arrays;
