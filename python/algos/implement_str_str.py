@@ -15,7 +15,7 @@ def sub_str(haystack: str, needle: str) -> int:
     return -1
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     assert sub_str("hello", "") == 0
     assert sub_str("hello", "ll") == 2
     assert sub_str("hello", "lls") == -1

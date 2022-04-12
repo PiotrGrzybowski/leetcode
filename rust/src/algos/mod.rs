@@ -10,3 +10,5 @@ pub mod maximum_subarray;
 pub mod length_of_last_word;
 pub mod add_binary;
 pub mod sqrt_x;
+pub mod climb_stairs;
+pub mod remove_duplicates_from_sorted_list;

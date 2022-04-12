@@ -20,7 +20,7 @@ def my_sqrt(x: int) -> int:
         return result
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     assert my_sqrt(0) == 0
     assert my_sqrt(1) == 1
     assert my_sqrt(3) == 1
