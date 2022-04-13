@@ -269,32 +269,28 @@ class Language:
             Custom: self.resolve_custom
         }
 
-    def resolve_type(self, kind) -> str:
+    def resolve_type(self, kind):
         if isinstance(kind, type):
-            return str(self.types[kind].name())
+            return self.types[kind]
         else:
             return self.resolvers[type(kind)](kind)
 
     def resolve_reference(self, reference):
-        return str(self.mappings[Reference](self.resolve_type(reference.target), reference.mutable))
+        return self.mappings[Reference](self.resolve_type(reference.target), reference.mutable)
 
     def resolve_pointer(self, pointer):
-        return str(self.mappings[Pointer](self.resolve_type(pointer.target)))
+        return self.mappings[Pointer](self.resolve_type(pointer.target))
 
     def resolve_vector(self, vector):
-        return str(self.mappings[Vector](self.resolve_type(vector.generic)))
+        return self.mappings[Vector](self.resolve_type(vector.generic))
 
     def resolve_custom(self, custom):
-        return str(custom)
+        return custom
 
     def resolve_arguments(self, arguments: list[Argument]) -> str:
         return ', '.join([self.resolve_argument(argument) for argument in arguments])
 
     def resolve_value(self, value: Value) -> str:
-        # if isinstance(value.kind, type):
-        #     return str(self.types[value.kind].value(value.value))
-        # else:
-        #     return str(self.types[type(value.kind)].cast(value.kind).value(value.value))
         reso = self.resolve_type(value.kind)
         return str(reso.value(value.value))
 
@@ -323,6 +319,17 @@ class Rust(Language):
         default_value = self.resolve_default_result(output)
         output_type = self.resolve_output_type(output)
         return f"pub fn {function}({arguments}) {output_type} {{\n    {default_value}\n}}"
+
+    def test_case(self, function: str, arguments, expected) -> str:
+        return f"assert.Equal(t, {self.resolve_value(expected)}, {function}({self.resolve_values(arguments)}))"
+
+    def rust_test_case(function: str, case: tuple[Any, Any]) -> str:
+        arguments, target = case
+        arguments = ", ".join(
+            [crate_rust_input_value(argument, typing) for argument, typing in arguments]
+        )
+        target = crate_rust_input_value(target[0], target[1])
+        return f"assert_eq!({function}({arguments}), {target});"
 
 
 class Go(Language):
