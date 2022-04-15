@@ -12,10 +12,11 @@ touch rust/tests/test_$1.rs
 
 """
 from __future__ import annotations
+
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
-from typing import Any, Sequence, TypeVar, Callable
+from typing import Any, Callable, Optional, Sequence, TypeVar
 
 
 class Type:
@@ -44,11 +45,11 @@ class Int(Type):
 class String(Type):
     @staticmethod
     def value(value: str) -> str:
-        return f"\"{value}\""
+        return f'"{value}"'
 
     @staticmethod
     def default_value() -> str:
-        return f"\"\""
+        return f'""'
 
 
 class Bool(Type):
@@ -79,7 +80,7 @@ class RustString:
 
     @staticmethod
     def value(value) -> str:
-        return f"String::from(\"{value}\")"
+        return f'String::from("{value}")'
 
     @staticmethod
     def default_value() -> str:
@@ -94,6 +95,13 @@ class RustBool(Bool):
     @staticmethod
     def default_value() -> str:
         return "true"
+
+    def __str__(self):
+        return "bool"
+
+    @staticmethod
+    def name() -> str:
+        return "bool"
 
 
 class RustNone:
@@ -114,7 +122,6 @@ class RustVector(Vector):
         return f"Vec::from({value})"
 
 
-
 class GoInt(Int):
     @staticmethod
     def name() -> str:
@@ -130,11 +137,18 @@ class GoString(String):
 class GoBool(Bool):
     @staticmethod
     def value(value: bool) -> str:
-        return "true" if value else "false"
+        return "True" if value else "False"
 
     @staticmethod
     def default_value() -> str:
-        return "true"
+        return "True"
+
+    def __str__(self):
+        return "bool"
+
+    @staticmethod
+    def name() -> str:
+        return "bool"
 
 
 class GoVector(Vector):
@@ -168,6 +182,13 @@ class PythonBool(Bool):
     @staticmethod
     def default_value() -> str:
         return "True"
+
+    def __str__(self):
+        return "bool"
+
+    @staticmethod
+    def name() -> str:
+        return "bool"
 
 
 class PythonVector(Vector):
@@ -217,6 +238,9 @@ class Custom:
     def __str__(self) -> str:
         return str(self.target)[1:]
 
+    def value(self, value):
+        return self.target.value(value)
+
 
 class RustReference(Reference):
     def __str__(self):
@@ -244,17 +268,26 @@ class PythonReference(Reference):
 
 class RustPointer(Pointer):
     def __str__(self):
-        return f"Optional<Box<{self.target}>>"
+        return f"Option<Box<{self.target}>>"
+
+    def value(self, value):
+        return f"&{self.target.value(value)}"
 
 
 class GoPointer(Pointer):
     def __str__(self):
         return f"*{self.target}"
 
+    def value(self, value):
+        return f"{self.target.value(value)}"
+
 
 class PythonPointer(Pointer):
     def __str__(self):
-        return str(self.target)
+        return f"Optional[{self.target}]"
+
+    def value(self, value):
+        return self.target.value(value)
 
 
 class Language:
@@ -266,7 +299,7 @@ class Language:
             Reference: self.resolve_reference,
             Vector: self.resolve_vector,
             Pointer: self.resolve_pointer,
-            Custom: self.resolve_custom
+            Custom: self.resolve_custom,
         }
 
     def resolve_type(self, kind):
@@ -276,7 +309,9 @@ class Language:
             return self.resolvers[type(kind)](kind)
 
     def resolve_reference(self, reference):
-        return self.mappings[Reference](self.resolve_type(reference.target), reference.mutable)
+        return self.mappings[Reference](
+            self.resolve_type(reference.target), reference.mutable
+        )
 
     def resolve_pointer(self, pointer):
         return self.mappings[Pointer](self.resolve_type(pointer.target))
@@ -285,17 +320,17 @@ class Language:
         return self.mappings[Vector](self.resolve_type(vector.generic))
 
     def resolve_custom(self, custom):
-        return custom
+        return custom.target()
 
     def resolve_arguments(self, arguments: list[Argument]) -> str:
-        return ', '.join([self.resolve_argument(argument) for argument in arguments])
+        return ", ".join([self.resolve_argument(argument) for argument in arguments])
 
     def resolve_value(self, value: Value) -> str:
         reso = self.resolve_type(value.kind)
         return str(reso.value(value.value))
 
     def resolve_values(self, values: list[Value]):
-        return ', '.join([self.resolve_value(value) for value in values])
+        return ", ".join([self.resolve_value(value) for value in values])
 
     def resolve_default_result(self, output):
         if isinstance(output, type):
@@ -306,30 +341,34 @@ class Language:
     def resolve_argument(self, argument) -> str:
         pass
 
+    def function_signature(
+            self, function: str, arguments: list[Argument], output=None
+    ) -> str:
+        pass
+
+    def test_case(self, filename, param, param1):
+        pass
+
 
 class Rust(Language):
     def resolve_argument(self, argument: Argument) -> str:
         return f"{argument.name}: {self.resolve_type(argument.kind)}"
 
     def resolve_output_type(self, output) -> str:
-        return f"-> {self.resolve_type(output)}" if output else ""
+        return f"-> {self.resolve_type(output).name()}" if output else ""
 
-    def function_signature(self, function: str, arguments: list[Argument], output=None) -> str:
+    def function_signature(
+            self, function: str, arguments: list[Argument], output=None
+    ) -> str:
         arguments = self.resolve_arguments(arguments)
         default_value = self.resolve_default_result(output)
         output_type = self.resolve_output_type(output)
-        return f"pub fn {function}({arguments}) {output_type} {{\n    {default_value}\n}}"
+        return (
+            f"pub fn {function}({arguments}) {output_type} {{\n    {default_value}\n}}"
+        )
 
     def test_case(self, function: str, arguments, expected) -> str:
         return f"assert.Equal(t, {self.resolve_value(expected)}, {function}({self.resolve_values(arguments)}))"
-
-    def rust_test_case(function: str, case: tuple[Any, Any]) -> str:
-        arguments, target = case
-        arguments = ", ".join(
-            [crate_rust_input_value(argument, typing) for argument, typing in arguments]
-        )
-        target = crate_rust_input_value(target[0], target[1])
-        return f"assert_eq!({function}({arguments}), {target});"
 
 
 class Go(Language):
@@ -337,9 +376,11 @@ class Go(Language):
         return f"{argument.name} {self.resolve_type(argument.kind)}"
 
     def resolve_output_type(self, output) -> str:
-        return f"{self.resolve_type(output)}" if output else ""
+        return f"{self.resolve_type(output).name()}" if output else ""
 
-    def function_signature(self, function: str, arguments: list[Argument], output=None) -> str:
+    def function_signature(
+            self, function: str, arguments: list[Argument], output=None
+    ) -> str:
         arguments = self.resolve_arguments(arguments)
         default_value = self.resolve_default_result(output)
         output_type = self.resolve_output_type(output)
@@ -354,9 +395,11 @@ class Python(Language):
         return f"{argument.name}: {self.resolve_type(argument.kind)}"
 
     def resolve_output_type(self, output) -> str:
-        return f"-> {self.resolve_type(output)}" if output else ""
+        return f"-> {self.resolve_type(output).name()}" if output else ""
 
-    def function_signature(self, function: str, arguments: list[Argument], output=None) -> str:
+    def function_signature(
+            self, function: str, arguments: list[Argument], output=None
+    ) -> str:
         arguments = self.resolve_arguments(arguments)
         default_value = self.resolve_default_result(output)
         output_type = self.resolve_output_type(output)
@@ -368,7 +411,22 @@ class Python(Language):
     # def test_cases(self, function, arguments_sequence, expected_sequence):
     #     return '\n'.join
 
-TreeNode = TypeVar('TreeNode')
+
+class TreeNode:
+    def __str__(self):
+        return "TreeNode"
+
+    @staticmethod
+    def name():
+        return "TreeNode"
+
+    @staticmethod
+    def default_value():
+        return "TreeNode()"
+
+    @staticmethod
+    def value(value):
+        return f"TreeNode({value})"
 
 
 class Value:
@@ -385,274 +443,208 @@ class Argument:
 
 def create_rust():
     r = Rust(
-        {String: RustString(), Int: RustInt(), None: RustNone(), Vector: RustVector, Reference: RustReference},
-        {Reference: RustReference, Vector: RustVector, Pointer: RustPointer}
+        {
+            String: RustString(),
+            Int: RustInt(),
+            None: RustNone(),
+            Vector: RustVector,
+            Reference: RustReference,
+            Bool: RustBool,
+        },
+        {Reference: RustReference, Vector: RustVector, Pointer: RustPointer},
     )
     return r
 
 
 def create_go():
     r = Go(
-        {String: GoString(), Int: GoInt(), None: GoNone(), Vector: GoVector, Reference: GoReference},
-        {Reference: GoReference, Vector: GoVector, Pointer: GoPointer}
+        {
+            String: GoString(),
+            Int: GoInt(),
+            None: GoNone(),
+            Vector: GoVector,
+            Reference: GoReference,
+            Bool: GoBool,
+        },
+        {Reference: GoReference, Vector: GoVector, Pointer: GoPointer},
     )
     return r
 
 
 def create_python():
     r = Python(
-        {String: PythonString(), Int: Int(), None: PythonNone(), Vector: PythonVector, Reference: PythonReference},
-        {Reference: PythonReference, Vector: PythonVector, Pointer: PythonPointer}
+        {
+            String: PythonString(),
+            Int: Int(),
+            None: PythonNone(),
+            Vector: PythonVector,
+            Reference: PythonReference,
+            Bool: PythonBool,
+        },
+        {Reference: PythonReference, Vector: PythonVector, Pointer: PythonPointer},
     )
     return r
 
 
+class Script:
+    def __init__(self, language: Language, path: Path) -> None:
+        self.language = language
+        self.path = path
+
+    def create(
+            self,
+            filename: str,
+            function: str,
+            arguments: list[Argument],
+            test_inputs: list[Value],
+            test_expected: list[Value],
+    ):
+        pass
+
+
+class PythonScript(Script):
+    python_main = "if __name__ == '__main__':\n"
+
+    def generate_imports(self):
+        return "from typing import Optional"
+
+    def create(
+            self,
+            filename: str,
+            arguments: list[Argument],
+            output: Any,
+            test_inputs: list[list[Value]],
+            test_expected: list[Value],
+    ) -> None:
+        self.touch(filename)
+
+        with open(self.filename(filename), "w") as f:
+            f.write(self.generate_imports())
+            self.write_lines(f, 3)
+            f.write(self.language.function_signature(filename, arguments, output))
+            self.write_lines(f, 2)
+            f.write(self.python_main)
+            self.write_test_cases(f, filename, test_expected, test_inputs)
+
+    def write_test_cases(self, f, filename, test_expected, test_inputs):
+        for inputs, expected in zip(test_inputs, test_expected):
+            f.write(f"    {self.language.test_case(filename, inputs, expected)}\n")
+
+    def write_lines(self, f, n):
+        for i in range(n):
+            f.write("\n")
+
+    def touch(self, filename: str) -> None:
+        (self.path / f"{filename}.py").touch(exist_ok=True)
+
+    def filename(self, filename: str) -> Path:
+        return self.path / f"{filename}.py"
+
+
+class RustScript(Script):
+    def __init__(self, language: Language, script_path: Path, test_path: Path):
+        super().__init__(language, script_path)
+        self.test_path = test_path
+
+    def create(
+            self,
+            filename: str,
+            arguments: list[Argument],
+            output: Any,
+            test_inputs: list[list[Value]],
+            test_expected: list[Value],
+    ) -> None:
+        self.touch(filename)
+
+        with open(self.filename(filename), "w") as f:
+            f.write(self.language.function_signature(filename, arguments, output))
+
+        with open(self.test_filename(filename), "w") as f:
+            f.write(f"use rust::algos::{filename}::{filename};\n\n")
+            f.write(f"#[test]\n")
+            f.write(f"fn test_{filename}() {{\n")
+            for inputs, expected in zip(test_inputs, test_expected):
+                f.write(f"    {self.language.test_case(filename, inputs, expected)}\n")
+            f.write("}\n")
+
+        with open(self.path / "mod.rs", "a") as f:
+            f.write(f"pub mod {filename};\n")
+
+    def write_lines(self, f, n):
+        for i in range(n):
+            f.write("\n")
+
+    def touch(self, filename: str) -> None:
+        (self.path / f"{filename}.rs").touch(exist_ok=True)
+
+    def filename(self, filename: str) -> Path:
+        return self.path / f"{filename}.rs"
+
+    def test_filename(self, filename: str) -> Path:
+        return self.test_path / f"test_{filename}.rs"
+
+
+class GoScript(Script):
+    def create(
+            self,
+            filename: str,
+            arguments: list[Argument],
+            output: Any,
+            test_inputs: list[list[Value]],
+            test_expected: list[Value],
+    ) -> None:
+        self.touch(filename)
+
+        with open(self.filename(filename), "w") as f:
+            f.write("package algos\n\n")
+            f.write(self.language.function_signature(filename, arguments, output))
+
+        with open(self.test_filename(filename), "w") as f:
+            f.write("package algos\n\n")
+            f.write("import (\n    \"github.com/stretchr/testify/assert\"\n    \"testing\"\n)\n\n")
+            f.write(f"func Test{filename.title()}(t *testing.T) {{\n")
+            for inputs, expected in zip(test_inputs, test_expected):
+                f.write(f"    {self.language.test_case(filename, inputs, expected)}\n")
+            f.write("}\n")
+
+    def touch(self, filename: str) -> None:
+        (self.path / f"{filename}.go").touch(exist_ok=True)
+
+    def filename(self, filename: str) -> Path:
+        return self.path / f"{filename}.go"
+
+    def test_filename(self, filename: str) -> Path:
+        return self.path / f"{filename}_test.go"
+
+
 inputs = [
-    Argument("nums1", Reference(Vector(Int), True)),
-    Argument("m", Int),
-    Argument("nums2", Reference(Vector(Int), True)),
-    Argument("n", Int),
+    Argument("tree", Pointer(Custom(TreeNode))),
+    # Argument("second", Pointer(Custom(TreeNode))),
 ]
 
-output = Vector(Int)
+output = Bool
 
 rust = create_rust()
 go = create_go()
 python = create_python()
 
-print(rust.function_signature('merge', inputs, output))
-print(go.function_signature('merge', inputs, output))
-print(python.function_signature('merge', inputs, output))
 
 test_inputs = [
     [
-        Value([2, 3, 4], Reference(Vector(Int), True)),
-        Value(3, Int),
-        Value([1, 2, 3, 4], Reference(Vector(Int), True)),
-        Value(4, Int)
+        Value(2, Pointer(Custom(TreeNode))),
+        # Value(3, Int),
+        # Value(2, Pointer(Custom(TreeNode))),
+        # Value(4, Int)
     ]
 ]
 
-test_expected = [
-    Value([1, 2, 3, 4], Vector(Int))
-]
+test_expected = [Value(3, Int)]
 
-print(python.test_case('merge', test_inputs[0], test_expected[0]))
-print(go.test_case('merge', test_inputs[0], test_expected[0]))
-
-
-@dataclass
-class InputArgument:
-    name: str
-    argument_type: str
-
-
-PYTHON = "python"
-RUST = "rust"
-GO = "go"
-
-PYTHON_MAIN = "if __name__ == '__main__':"
-types = {
-    PYTHON: {
-        int: "int",
-        str: "str",
-        float: "float",
-        list[str]: "list[str]",
-        list[int]: "list[int]",
-        "None": "None"
-    },
-    RUST: {
-        int: "i32",
-        str: "String",
-        list[str]: "Vec<String>",
-        list[int]: "Vec<i32>",
-        "None": ""
-    },
-    GO: {int: "int", str: "string", list[str]: "[]string", list[int]: "[]int", "None": ""},
-}
-
-
-def crate_rust_input_value(value: Any, typing: type) -> Any:
-    if typing == int:
-        return str(value)
-    elif typing == str:
-        return f'String::from("{value}")'
-    elif typing == list[str]:
-        return f"vec!{value}"
-    elif typing == list[int]:
-        return f"vec!{value}"
-    else:
-        return ""
-
-
-def crate_go_input_value(value: Any, typing: type) -> Any:
-    if typing == int:
-        return str(value)
-    elif typing == str:
-        return f'"{value}"'
-    elif typing == list[str]:
-        return f"[]string{{{value}}}"
-    elif typing == list[int]:
-        return f"[]int{{{value}}}"
-    else:
-        return ""
-
-
-def crate_python_input_value(value: Any, typing: type) -> Any:
-    if typing == int:
-        return str(value)
-    elif typing == str:
-        return f'"{value}"'
-    elif typing == list[str]:
-        return f"{value}"
-    elif typing == list[int]:
-        return f"{value}"
-    else:
-        return ""
-
-
-def python_test_case(function: str, case: tuple[Any, Any]) -> str:
-    arguments, target = case
-    arguments = ", ".join(
-        [crate_python_input_value(argument, typing) for argument, typing in arguments]
-    )
-    target = crate_python_input_value(target[0], target[1])
-    return f"assert {function}({arguments}) == {target}"
-
-
-def rust_test_case(function: str, case: tuple[Any, Any]) -> str:
-    arguments, target = case
-    arguments = ", ".join(
-        [crate_rust_input_value(argument, typing) for argument, typing in arguments]
-    )
-    target = crate_rust_input_value(target[0], target[1])
-    return f"assert_eq!({function}({arguments}), {target});"
-
-
-def go_test_case(function: str, case: tuple[Any, Any]) -> str:
-    arguments, target = case
-    arguments = ", ".join(
-        [crate_go_input_value(argument, typing) for argument, typing in arguments]
-    )
-    target = crate_go_input_value(target[0], target[1])
-    init, *temp = function.split("_")
-    function = "".join([init.lower(), *map(str.title, temp)])
-    return f"assert.Equal(t, {target}, {function}({arguments}))"
-
-
-def python_signature(filename, inputs, output):
-    return f"def {filename}({', '.join([f'{argument[0]}: {types[PYTHON][argument[1]]}' for argument in inputs])}) -> {types[PYTHON][output]}:\n    return {python_default_output(output)}"
-
-
-def rust_signature(filename, inputs, output):
-    return f"pub fn {filename}({', '.join([f'{argument[0]}: {types[RUST][argument[1]]}' for argument in inputs])}) -> {types[RUST][output]} {{\n    {rust_default_output(output)}\n}}"
-
-
-def go_signature(filename, inputs, output):
-    init, *temp = filename.split("_")
-    filename = "".join([init.lower(), *map(str.title, temp)])
-
-    return f"func {filename}({', '.join([f'{argument[0]} {types[GO][argument[1]]}' for argument in inputs])}) {types[GO][output]} {{\n    return {go_default_output(output)}\n}}"
-
-
-def python_default_output(typing) -> Any:
-    if typing == int:
-        return 0
-    elif typing == str:
-        return f'""'
-    elif typing == list[str]:
-        return f"[]"
-    elif typing == list[int]:
-        return f"[]"
-    else:
-        return ""
-
-
-def rust_default_output(typing) -> Any:
-    if typing == int:
-        return 0
-    elif typing == str:
-        return f'String::from("")'
-    elif typing == list[str]:
-        return f"vec![]"
-    elif typing == list[int]:
-        return f"vec![]"
-    else:
-        return ""
-
-
-def go_default_output(typing) -> Any:
-    if typing == int:
-        return 0
-    elif typing == str:
-        return f'""'
-    elif typing == list[str]:
-        return f"[]string{{}}"
-    elif typing == list[int]:
-        return f"[]int{{}}"
-    else:
-        return ""
-
-
-filename = "inorder_traversal"
-
-python_function_name = 'inorder_traversal'
-
-inputs = [("root", int)]
-output = list[int]
-tests = [
-    # ([([1, 2, 3, 0, 0, 0], list[int]), (3, int), ([2, 5, 6], list[int]), (2, int)], ([1, 2, 2, 3, 5, 6], list[int])),
-    # ([([1, 2, 2, 3, 3, 4, 8, 0, 0, 0, 0, 0], list[int]), (7, int), ([2, 2, 3, 3, 5], list[int]), (5, int)],
-    #  ([1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 5, 8], list[int])),
-    # ([([1], list[int]), (1, int), ([], list[int]), (0, int)], ([1], list[int])),
-    ([(1, int)], ([1, 3, 2], list[int])),
-]
-
-# python_script_path = Path("python", "algos", f"{filename}.py")
-# python_script_path.touch(exist_ok=True)
-#
-# with open(python_script_path, 'w') as f:
-#     f.write(f"{python_signature(python_function_name, inputs, output)}\n\n\n")
-#     f.write(f"{PYTHON_MAIN}\n")
-#     for test in tests:
-#         f.write(f"    {python_test_case(python_function_name, test)}\n")
-#
-# rust_script_path = Path("rust", "src", "algos", f"{filename}.rs")
-# rust_test_path = Path("rust", "tests", f"test_{filename}.rs")
-# rust_mod_path = Path("rust", "src", "algos", "mod.rs")
-# rust_script_path.touch(exist_ok=True)
-# rust_test_path.touch(exist_ok=True)
-#
-# with open(rust_script_path, 'w') as f:
-#     f.write(f"{rust_signature(python_function_name, inputs, output)}\n\n\n")
-#
-# with open(rust_test_path, 'w') as f:
-#     f.write(f"use rust::algos::{filename}::{filename};\n\n")
-#     f.write(f"#[test]\n")
-#     f.write(f"fn test_{filename}() {{\n")
-#     for test in tests:
-#         f.write(f"    {rust_test_case(python_function_name, test)}\n")
-#     f.write("}\n")
-#
-# with open(rust_mod_path, "a") as f:
-#     f.write(f"pub mod {filename};\n")
-#
-# go_script_path = Path("go", f"{filename}.go")
-# go_test_path = Path("go", f"{filename}_test.go")
-# go_script_path.touch(exist_ok=True)
-# go_test_path.touch(exist_ok=True)
-#
-# with open(go_script_path, 'w') as f:
-#     f.write("package algos\n\n")
-#     f.write(f"{go_signature(python_function_name, inputs, output)}\n\n\n")
-#
-# with open(go_test_path, 'w') as f:
-#     f.write("package algos\n\n")
-#     f.write("import (\n    \"github.com/stretchr/testify/assert\"\n    \"testing\"\n)\n\n")
-#     f.write(f"func Test{filename.title()}(t *testing.T) {{\n")
-#     for test in tests:
-#         f.write(f"    {go_test_case(python_function_name, test)}\n")
-#     f.write("}\n")
-#
-# with open(rust_mod_path, "a") as f:
-#     f.write(f"pub mod {filename};\n")
+python_script = PythonScript(python, Path("python", "algos"))
+rust_script = RustScript(rust, Path("rust", "src", "algos"), Path("rust", "tests"))
+go_script = GoScript(go, Path("go"))
+# python_script = PythonScript(python, Path("python", "algos"))
+filename = 'max_depth_bst'
+python_script.create(filename, inputs, output, test_inputs, test_expected)
+rust_script.create(filename, inputs, output, test_inputs, test_expected)
+go_script.create(filename, inputs, output, test_inputs, test_expected)

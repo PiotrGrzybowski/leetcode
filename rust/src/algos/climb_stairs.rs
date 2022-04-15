@@ -17,5 +17,3 @@ pub fn climb_stairs(stairs: i32) -> i32 {
         answer
     }
 }
-
-

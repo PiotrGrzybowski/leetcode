@@ -16,4 +16,3 @@ pub fn merge(first: &mut Vec<i32>, m: i32, second: &mut Vec<i32>, n: i32) -> Vec
     }
     first.clone()
 }
-

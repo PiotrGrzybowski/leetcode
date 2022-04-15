@@ -3,7 +3,7 @@ pub fn str_str(haystack: String, needle: String) -> i32 {
         return 0;
     }
     if needle.len() > haystack.len() {
-        return -1
+        return -1;
     }
     let haystack_chars: Vec<char> = haystack.chars().collect();
     let needle_chars: Vec<char> = needle.chars().collect();
@@ -15,7 +15,7 @@ pub fn str_str(haystack: String, needle: String) -> i32 {
             i += 1;
         }
         if i == needle_chars.len() {
-            return index as i32
+            return index as i32;
         }
         index += 1
     }

@@ -7,10 +7,7 @@ pub struct ListNode {
 impl ListNode {
     #[inline]
     fn new(val: i32) -> Self {
-        ListNode {
-            next: None,
-            val,
-        }
+        ListNode { next: None, val }
     }
 }
 
@@ -29,6 +26,3 @@ pub fn remove_duplicates(head: Option<Box<ListNode>>) -> Option<Box<ListNode>> {
     }
     taken_head
 }
-
-
-

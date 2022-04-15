@@ -1,4 +1,4 @@
-use rust::algos::merge_two_sorted_lists::{ListNode, merge_two_lists, merge_two_lists_iterative};
+use rust::algos::merge_two_sorted_lists::{merge_two_lists, merge_two_lists_iterative, ListNode};
 
 #[test]
 fn test_merge_two_sorted_lists_both_empty() {

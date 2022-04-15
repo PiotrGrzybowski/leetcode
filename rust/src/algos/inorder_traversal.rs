@@ -1,5 +1,5 @@
-use std::rc::Rc;
 use std::cell::RefCell;
+use std::rc::Rc;
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct TreeNode {
@@ -19,7 +19,6 @@ impl TreeNode {
     }
 }
 
-
 pub fn help(root: &Option<Rc<RefCell<TreeNode>>>, result: &mut Vec<i32>) {
     if let Some(node) = root {
         let node = node.borrow();
@@ -34,4 +33,3 @@ pub fn inorder_traversal(root: Option<Rc<RefCell<TreeNode>>>) -> Vec<i32> {
     help(&root, &mut result);
     result
 }
-

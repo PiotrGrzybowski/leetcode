@@ -37,17 +37,15 @@ pub fn merge_two_lists_iterative(
     list1: Option<Box<ListNode>>,
     list2: Option<Box<ListNode>>,
 ) -> Option<Box<ListNode>> {
-
     let mut result = Box::new(ListNode::new(0));
     let mut pointer = &mut result;
 
     let mut first = list1;
     let mut second = list2;
 
-
     while first.is_some() && second.is_some() {
-       let first_taken = first.take();
-       let second_taken = second.take();
+        let first_taken = first.take();
+        let second_taken = second.take();
 
         if let (Some(mut first_head), Some(mut second_head)) = (first_taken, second_taken) {
             if first_head.val <= second_head.val {
@@ -65,7 +63,7 @@ pub fn merge_two_lists_iterative(
     if first.is_some() {
         pointer.next = first;
     }
-    if second.is_some(){
+    if second.is_some() {
         pointer.next = second;
     }
     result.next
