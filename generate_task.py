@@ -228,7 +228,7 @@ class Pointer:
 
     @classmethod
     def cast(cls, pointer):
-        return cls(pointer.generic)
+        return cls(pointer.target)
 
 
 class Custom:
@@ -450,6 +450,7 @@ def create_rust():
             Vector: RustVector,
             Reference: RustReference,
             Bool: RustBool,
+            Pointer: RustPointer
         },
         {Reference: RustReference, Vector: RustVector, Pointer: RustPointer},
     )
@@ -465,6 +466,7 @@ def create_go():
             Vector: GoVector,
             Reference: GoReference,
             Bool: GoBool,
+            Pointer: GoPointer
         },
         {Reference: GoReference, Vector: GoVector, Pointer: GoPointer},
     )
@@ -480,6 +482,7 @@ def create_python():
             Vector: PythonVector,
             Reference: PythonReference,
             Bool: PythonBool,
+            Pointer: PythonPointer
         },
         {Reference: PythonReference, Vector: PythonVector, Pointer: PythonPointer},
     )
@@ -618,33 +621,28 @@ class GoScript(Script):
 
 
 inputs = [
-    Argument("tree", Pointer(Custom(TreeNode))),
-    # Argument("second", Pointer(Custom(TreeNode))),
+    Argument("values", Vector(Int)),
 ]
 
-output = Bool
+output = Pointer(TreeNode)
 
 rust = create_rust()
 go = create_go()
 python = create_python()
 
-
 test_inputs = [
-    [
-        Value(2, Pointer(Custom(TreeNode))),
-        # Value(3, Int),
-        # Value(2, Pointer(Custom(TreeNode))),
-        # Value(4, Int)
-    ]
+
 ]
 
-test_expected = [Value(3, Int)]
+test_expected = [
+    # Value(3, Int)
+]
 
 python_script = PythonScript(python, Path("python", "algos"))
 rust_script = RustScript(rust, Path("rust", "src", "algos"), Path("rust", "tests"))
 go_script = GoScript(go, Path("go"))
 # python_script = PythonScript(python, Path("python", "algos"))
-filename = 'max_depth_bst'
+filename = 'sorted_array_to_bst'
 python_script.create(filename, inputs, output, test_inputs, test_expected)
 rust_script.create(filename, inputs, output, test_inputs, test_expected)
 go_script.create(filename, inputs, output, test_inputs, test_expected)

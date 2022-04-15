@@ -1,5 +1,6 @@
 pub mod add_binary;
 pub mod climb_stairs;
+pub mod convert_sorted_array_to_binary_tree;
 pub mod implement_str_str;
 pub mod inorder_traversal;
 pub mod length_of_last_word;
