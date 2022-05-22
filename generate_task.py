@@ -623,10 +623,11 @@ class GoScript(Script):
 
 
 inputs = [
-    Argument("root", Custom(TreeNode)),
+    Argument("root", Pointer(Custom(TreeNode))),
+    Argument("target_sum", Int)
 ]
 
-output = Int
+output = Bool
 
 rust = create_rust()
 go = create_go()
@@ -642,7 +643,7 @@ python_script = PythonScript(python, Path("python", "algos"))
 rust_script = RustScript(rust, Path("rust", "src", "algos"), Path("rust", "tests"))
 go_script = GoScript(go, Path("go"))
 # python_script = PythonScript(python, Path("python", "algos"))
-filename = "minimum_depth_of_bst"
+filename = "path_sum"
 python_script.create(filename, inputs, output, test_inputs, test_expected)
 rust_script.create(filename, inputs, output, test_inputs, test_expected)
 go_script.create(filename, inputs, output, test_inputs, test_expected)

@@ -9,6 +9,7 @@ pub mod merge_sorted_arrays;
 pub mod merge_two_sorted_lists;
 pub mod minimum_depth_of_bst;
 pub mod palindrome_number;
+pub mod path_sum;
 pub mod remove_duplicates_from_sorted_array;
 pub mod remove_duplicates_from_sorted_list;
 pub mod remove_element;

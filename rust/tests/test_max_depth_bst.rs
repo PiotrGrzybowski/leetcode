@@ -8,8 +8,8 @@ fn test_max_depth_bst() {
     let right = Option::from(Rc::new(RefCell::new(TreeNode::new(10))));
     let tree = Option::from(Rc::new(RefCell::new(TreeNode {
         val: 8,
-        left: left,
-        right: right,
+        left,
+        right,
     })));
 
     assert_eq!(2, max_depth_bst(tree));
