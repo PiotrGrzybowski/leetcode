@@ -1,4 +1,4 @@
-use rust::algos::max_depth_bst::{max_depth_bst, max_depth_bst2, TreeNode};
+use rust::algos::max_depth_bst::{max_depth_bst, TreeNode};
 use std::cell::RefCell;
 use std::rc::Rc;
 
@@ -12,5 +12,5 @@ fn test_max_depth_bst() {
         right: right,
     })));
 
-    assert_eq!(2, max_depth_bst2(tree));
+    assert_eq!(2, max_depth_bst(tree));
 }

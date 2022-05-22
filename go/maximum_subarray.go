@@ -9,6 +9,13 @@ func max(x int, y int) int {
 	return x
 }
 
+func min(x int, y int) int {
+	if x < y {
+		return x
+	}
+	return y
+}
+
 func maxSubArray(nums []int) int {
 	best := math.MinInt64
 	currentMax := 0

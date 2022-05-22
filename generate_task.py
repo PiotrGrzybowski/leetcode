@@ -342,7 +342,7 @@ class Language:
         pass
 
     def function_signature(
-            self, function: str, arguments: list[Argument], output=None
+        self, function: str, arguments: list[Argument], output=None
     ) -> str:
         pass
 
@@ -358,7 +358,7 @@ class Rust(Language):
         return f"-> {self.resolve_type(output).name()}" if output else ""
 
     def function_signature(
-            self, function: str, arguments: list[Argument], output=None
+        self, function: str, arguments: list[Argument], output=None
     ) -> str:
         arguments = self.resolve_arguments(arguments)
         default_value = self.resolve_default_result(output)
@@ -379,7 +379,7 @@ class Go(Language):
         return f"{self.resolve_type(output).name()}" if output else ""
 
     def function_signature(
-            self, function: str, arguments: list[Argument], output=None
+        self, function: str, arguments: list[Argument], output=None
     ) -> str:
         arguments = self.resolve_arguments(arguments)
         default_value = self.resolve_default_result(output)
@@ -398,7 +398,7 @@ class Python(Language):
         return f"-> {self.resolve_type(output).name()}" if output else ""
 
     def function_signature(
-            self, function: str, arguments: list[Argument], output=None
+        self, function: str, arguments: list[Argument], output=None
     ) -> str:
         arguments = self.resolve_arguments(arguments)
         default_value = self.resolve_default_result(output)
@@ -450,7 +450,7 @@ def create_rust():
             Vector: RustVector,
             Reference: RustReference,
             Bool: RustBool,
-            Pointer: RustPointer
+            Pointer: RustPointer,
         },
         {Reference: RustReference, Vector: RustVector, Pointer: RustPointer},
     )
@@ -466,7 +466,7 @@ def create_go():
             Vector: GoVector,
             Reference: GoReference,
             Bool: GoBool,
-            Pointer: GoPointer
+            Pointer: GoPointer,
         },
         {Reference: GoReference, Vector: GoVector, Pointer: GoPointer},
     )
@@ -482,7 +482,7 @@ def create_python():
             Vector: PythonVector,
             Reference: PythonReference,
             Bool: PythonBool,
-            Pointer: PythonPointer
+            Pointer: PythonPointer,
         },
         {Reference: PythonReference, Vector: PythonVector, Pointer: PythonPointer},
     )
@@ -495,12 +495,12 @@ class Script:
         self.path = path
 
     def create(
-            self,
-            filename: str,
-            function: str,
-            arguments: list[Argument],
-            test_inputs: list[Value],
-            test_expected: list[Value],
+        self,
+        filename: str,
+        function: str,
+        arguments: list[Argument],
+        test_inputs: list[Value],
+        test_expected: list[Value],
     ):
         pass
 
@@ -512,12 +512,12 @@ class PythonScript(Script):
         return "from typing import Optional"
 
     def create(
-            self,
-            filename: str,
-            arguments: list[Argument],
-            output: Any,
-            test_inputs: list[list[Value]],
-            test_expected: list[Value],
+        self,
+        filename: str,
+        arguments: list[Argument],
+        output: Any,
+        test_inputs: list[list[Value]],
+        test_expected: list[Value],
     ) -> None:
         self.touch(filename)
 
@@ -550,12 +550,12 @@ class RustScript(Script):
         self.test_path = test_path
 
     def create(
-            self,
-            filename: str,
-            arguments: list[Argument],
-            output: Any,
-            test_inputs: list[list[Value]],
-            test_expected: list[Value],
+        self,
+        filename: str,
+        arguments: list[Argument],
+        output: Any,
+        test_inputs: list[list[Value]],
+        test_expected: list[Value],
     ) -> None:
         self.touch(filename)
 
@@ -589,12 +589,12 @@ class RustScript(Script):
 
 class GoScript(Script):
     def create(
-            self,
-            filename: str,
-            arguments: list[Argument],
-            output: Any,
-            test_inputs: list[list[Value]],
-            test_expected: list[Value],
+        self,
+        filename: str,
+        arguments: list[Argument],
+        output: Any,
+        test_inputs: list[list[Value]],
+        test_expected: list[Value],
     ) -> None:
         self.touch(filename)
 
@@ -604,7 +604,9 @@ class GoScript(Script):
 
         with open(self.test_filename(filename), "w") as f:
             f.write("package algos\n\n")
-            f.write("import (\n    \"github.com/stretchr/testify/assert\"\n    \"testing\"\n)\n\n")
+            f.write(
+                'import (\n    "github.com/stretchr/testify/assert"\n    "testing"\n)\n\n'
+            )
             f.write(f"func Test{filename.title()}(t *testing.T) {{\n")
             for inputs, expected in zip(test_inputs, test_expected):
                 f.write(f"    {self.language.test_case(filename, inputs, expected)}\n")
@@ -621,18 +623,16 @@ class GoScript(Script):
 
 
 inputs = [
-    Argument("values", Vector(Int)),
+    Argument("root", Custom(TreeNode)),
 ]
 
-output = Pointer(TreeNode)
+output = Int
 
 rust = create_rust()
 go = create_go()
 python = create_python()
 
-test_inputs = [
-
-]
+test_inputs = []
 
 test_expected = [
     # Value(3, Int)
@@ -642,7 +642,7 @@ python_script = PythonScript(python, Path("python", "algos"))
 rust_script = RustScript(rust, Path("rust", "src", "algos"), Path("rust", "tests"))
 go_script = GoScript(go, Path("go"))
 # python_script = PythonScript(python, Path("python", "algos"))
-filename = 'sorted_array_to_bst'
+filename = "minimum_depth_of_bst"
 python_script.create(filename, inputs, output, test_inputs, test_expected)
 rust_script.create(filename, inputs, output, test_inputs, test_expected)
 go_script.create(filename, inputs, output, test_inputs, test_expected)

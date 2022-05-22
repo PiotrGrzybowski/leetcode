@@ -24,16 +24,16 @@ pub fn sorted_array_to_bst_ranged(
     left: usize,
     right: usize,
 ) -> Option<Rc<RefCell<TreeNode>>> {
-    if left > right {
-        return None;
+    return if left > right {
+        None
     } else if left == right {
-        return Option::from(Rc::new(RefCell::new(TreeNode {
+        Option::from(Rc::new(RefCell::new(TreeNode {
             val: nums[left],
             left: None,
             right: None,
-        })));
+        })))
     } else if right - left == 1 {
-        return Option::from(Rc::new(RefCell::new(TreeNode {
+        Option::from(Rc::new(RefCell::new(TreeNode {
             val: nums[right],
             left: Option::from(Rc::new(RefCell::new(TreeNode {
                 val: nums[left],
@@ -41,9 +41,9 @@ pub fn sorted_array_to_bst_ranged(
                 right: None,
             }))),
             right: None,
-        })));
+        })))
     } else if right - left == 2 {
-        return Option::from(Rc::new(RefCell::new(TreeNode {
+        Option::from(Rc::new(RefCell::new(TreeNode {
             val: nums[left + 1],
             left: Option::from(Rc::new(RefCell::new(TreeNode {
                 val: nums[left],
@@ -55,15 +55,15 @@ pub fn sorted_array_to_bst_ranged(
                 left: None,
                 right: None,
             }))),
-        })));
+        })))
     } else {
         let middle = left + (right - left) / 2;
-        return Option::from(Rc::new(RefCell::new(TreeNode {
+        Option::from(Rc::new(RefCell::new(TreeNode {
             val: nums[middle],
             left: sorted_array_to_bst_ranged(nums, left, middle - 1),
             right: sorted_array_to_bst_ranged(nums, middle + 1, right),
-        })));
-    }
+        })))
+    };
 }
 
 pub fn sorted_array_to_bst(nums: Vec<i32>) -> Option<Rc<RefCell<TreeNode>>> {
