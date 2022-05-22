@@ -342,7 +342,7 @@ class Language:
         pass
 
     def function_signature(
-        self, function: str, arguments: list[Argument], output=None
+            self, function: str, arguments: list[Argument], output=None
     ) -> str:
         pass
 
@@ -358,7 +358,7 @@ class Rust(Language):
         return f"-> {self.resolve_type(output).name()}" if output else ""
 
     def function_signature(
-        self, function: str, arguments: list[Argument], output=None
+            self, function: str, arguments: list[Argument], output=None
     ) -> str:
         arguments = self.resolve_arguments(arguments)
         default_value = self.resolve_default_result(output)
@@ -368,7 +368,7 @@ class Rust(Language):
         )
 
     def test_case(self, function: str, arguments, expected) -> str:
-        return f"assert.Equal(t, {self.resolve_value(expected)}, {function}({self.resolve_values(arguments)}))"
+        return f"assert_eq!({self.resolve_value(expected)}, {function}({self.resolve_values(arguments)})"
 
 
 class Go(Language):
@@ -379,7 +379,7 @@ class Go(Language):
         return f"{self.resolve_type(output).name()}" if output else ""
 
     def function_signature(
-        self, function: str, arguments: list[Argument], output=None
+            self, function: str, arguments: list[Argument], output=None
     ) -> str:
         arguments = self.resolve_arguments(arguments)
         default_value = self.resolve_default_result(output)
@@ -398,7 +398,7 @@ class Python(Language):
         return f"-> {self.resolve_type(output).name()}" if output else ""
 
     def function_signature(
-        self, function: str, arguments: list[Argument], output=None
+            self, function: str, arguments: list[Argument], output=None
     ) -> str:
         arguments = self.resolve_arguments(arguments)
         default_value = self.resolve_default_result(output)
@@ -495,12 +495,12 @@ class Script:
         self.path = path
 
     def create(
-        self,
-        filename: str,
-        function: str,
-        arguments: list[Argument],
-        test_inputs: list[Value],
-        test_expected: list[Value],
+            self,
+            filename: str,
+            function: str,
+            arguments: list[Argument],
+            test_inputs: list[Value],
+            test_expected: list[Value],
     ):
         pass
 
@@ -512,12 +512,12 @@ class PythonScript(Script):
         return "from typing import Optional"
 
     def create(
-        self,
-        filename: str,
-        arguments: list[Argument],
-        output: Any,
-        test_inputs: list[list[Value]],
-        test_expected: list[Value],
+            self,
+            filename: str,
+            arguments: list[Argument],
+            output: Any,
+            test_inputs: list[list[Value]],
+            test_expected: list[Value],
     ) -> None:
         self.touch(filename)
 
@@ -550,12 +550,12 @@ class RustScript(Script):
         self.test_path = test_path
 
     def create(
-        self,
-        filename: str,
-        arguments: list[Argument],
-        output: Any,
-        test_inputs: list[list[Value]],
-        test_expected: list[Value],
+            self,
+            filename: str,
+            arguments: list[Argument],
+            output: Any,
+            test_inputs: list[list[Value]],
+            test_expected: list[Value],
     ) -> None:
         self.touch(filename)
 
@@ -589,12 +589,12 @@ class RustScript(Script):
 
 class GoScript(Script):
     def create(
-        self,
-        filename: str,
-        arguments: list[Argument],
-        output: Any,
-        test_inputs: list[list[Value]],
-        test_expected: list[Value],
+            self,
+            filename: str,
+            arguments: list[Argument],
+            output: Any,
+            test_inputs: list[list[Value]],
+            test_expected: list[Value],
     ) -> None:
         self.touch(filename)
 
@@ -623,27 +623,31 @@ class GoScript(Script):
 
 
 inputs = [
-    Argument("root", Pointer(Custom(TreeNode))),
-    Argument("target_sum", Int)
+    Argument("prices", Vector(Int)),
 ]
 
-output = Bool
+output = Int
 
 rust = create_rust()
 go = create_go()
 python = create_python()
 
-test_inputs = []
+test_inputs = [
+    [Value([7, 1, 5, 3, 6, 4], Vector(Int))],
+    [Value([7, 6, 4, 3, 1], Vector(Int))],
+
+]
 
 test_expected = [
-    # Value(3, Int)
+    Value(5, Int),
+    Value(0, Int)
 ]
 
 python_script = PythonScript(python, Path("python", "algos"))
 rust_script = RustScript(rust, Path("rust", "src", "algos"), Path("rust", "tests"))
 go_script = GoScript(go, Path("go"))
 # python_script = PythonScript(python, Path("python", "algos"))
-filename = "path_sum"
+filename = "best_time_to_buy_and_sell_stocks"
 python_script.create(filename, inputs, output, test_inputs, test_expected)
 rust_script.create(filename, inputs, output, test_inputs, test_expected)
 go_script.create(filename, inputs, output, test_inputs, test_expected)

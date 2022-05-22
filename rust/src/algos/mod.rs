@@ -1,4 +1,5 @@
 pub mod add_binary;
+pub mod best_time_to_buy_and_sell_stocks;
 pub mod climb_stairs;
 pub mod implement_str_str;
 pub mod inorder_traversal;
