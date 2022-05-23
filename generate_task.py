@@ -429,6 +429,23 @@ class TreeNode:
         return f"TreeNode({value})"
 
 
+class ListNode:
+    def __str__(self):
+        return "ListNode"
+
+    @staticmethod
+    def name():
+        return "ListNode"
+
+    @staticmethod
+    def default_value():
+        return "ListNode()"
+
+    @staticmethod
+    def value(value):
+        return f"ListNode({value})"
+
+
 class Value:
     def __init__(self, value: Any, kind) -> None:
         self.value = value
@@ -623,31 +640,32 @@ class GoScript(Script):
 
 
 inputs = [
-    Argument("prices", Vector(Int)),
+    Argument("node", Reference(Custom(ListNode), False)),
 ]
 
-output = Int
+output = Bool
 
 rust = create_rust()
 go = create_go()
 python = create_python()
 
 test_inputs = [
-    [Value([7, 1, 5, 3, 6, 4], Vector(Int))],
-    [Value([7, 6, 4, 3, 1], Vector(Int))],
+    # [Value([2, 2, 1], Vector(Int))],
+    # [Value([4, 1, 2, 1, 2], Vector(Int))],
+    # [Value([1], Vector(Int))],
 
 ]
-
 test_expected = [
-    Value(5, Int),
-    Value(0, Int)
+    # Value(1, Int),
+    # Value(4, Int),
+    # Value(1, Int),
 ]
 
 python_script = PythonScript(python, Path("python", "algos"))
 rust_script = RustScript(rust, Path("rust", "src", "algos"), Path("rust", "tests"))
 go_script = GoScript(go, Path("go"))
 # python_script = PythonScript(python, Path("python", "algos"))
-filename = "best_time_to_buy_and_sell_stocks"
+filename = "linked_list_cycle"
 python_script.create(filename, inputs, output, test_inputs, test_expected)
 rust_script.create(filename, inputs, output, test_inputs, test_expected)
 go_script.create(filename, inputs, output, test_inputs, test_expected)

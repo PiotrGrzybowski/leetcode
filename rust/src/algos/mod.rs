@@ -20,3 +20,6 @@ pub mod sorted_array_to_bst;
 pub mod sqrt_x;
 pub mod two_sum;
 pub mod valid_parentheses;
+pub mod single_number;
+pub mod linked_list_cycle;
+pub mod min_stack;
