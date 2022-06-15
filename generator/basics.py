@@ -15,7 +15,11 @@ class Vector(Generic[T]):
         super().__init__()
         self.values = values
 
-    name = 'vector'
+
+class Map(Generic[T, S]):
+    def __init__(self, values: dict[T, S]) -> None:
+        super().__init__()
+        self.values = values
 
 
 class PythonVector(Vector[T]):
@@ -28,15 +32,15 @@ class PythonVector(Vector[T]):
         return '[]'
 
     @staticmethod
-    def new(generics, value):
-        return f"[{value}]"
+    def new(generics, values):
+        return f"[{values}]"
+
+    @staticmethod
+    def build(data, generics):
+        return [build(generics[0], value) for value in data]
 
 
-class PythonMap(Generic[T, S]):
-    def __init__(self, values: dict[T, S]) -> None:
-        super().__init__()
-        self.values = values
-
+class PythonMap(Map[T, S]):
     @staticmethod
     def resolve(generics) -> str:
         return f"dict[{generics[0]}, {generics[1]}]"
@@ -46,8 +50,16 @@ class PythonMap(Generic[T, S]):
         return '{}'
 
     @staticmethod
-    def new(generics, value):
-        return f"{{{value}}}"
+    def build(data, generics):
+        key_alias, value_alias = generics
+        return {build(key_alias, key): build(value_alias, value) for key, value in data.items()}
+
+
+def build(alias, value):
+    if hasattr(alias, '__origin__'):
+        return alias.__origin__.build(value, alias.__args__)
+    else:
+        return alias.new(value)
 
 
 class GoVector(Vector[T]):
@@ -64,7 +76,7 @@ class RustVector(Vector[T]):
     pass
 
 
-class GoMap(Generic[T, S]):
+class GoMap(Map[T, S]):
     @staticmethod
     def resolve(generics) -> str:
         return f"map[{generics[0]}]{generics[1]}"
@@ -72,6 +84,11 @@ class GoMap(Generic[T, S]):
     @staticmethod
     def default() -> str:
         return 'nil'
+
+    @staticmethod
+    def build(data, generics):
+        key_alias, value_alias = generics
+        return {build(key_alias, key): build(value_alias, value) for key, value in data.items()}
 
 
 class Int:
@@ -91,7 +108,7 @@ class Int:
 
     @staticmethod
     def new(value):
-        return str(value)
+        return value
 
 
 def resolve_type(alias):
@@ -128,12 +145,6 @@ def resolve_type2(alias, value):
 #     else:
 #         return alias.new(value)
 
-def build(alias, generics, value):
-    if generics:
-        alias.new()
-        pass
-    else:
-        return alias.new(value)
 
 
 def resolve_value(value):
@@ -144,12 +155,31 @@ def resolve_value(value):
         # print(value.__orig_class__.__origin__)
         # print(value.__orig_class__.__args__)
         alias = value.__orig_class__
-        resolved, generic = resolve_type2(alias, value)
-
-        return build(resolved, generic, value.values)
+        # resolved, generic = resolve_type2(alias, value)
+        # print(alias)
+        # print(resolved)
+        # print(generic)
+        ##resolvec -> []int{...}
+        return build(alias, value.values)
 
     else:
         return str(value.number)
+
+
+
+def map_resolver(d):
+    elements = []
+    for key, value in d.items():
+        elements.append(f"{builo(key)}, {builo(value)}")
+
+
+def builo(value):
+    match type(value):
+        case list():
+            return "d"
+        case dict():
+            return "a"
+    pass
 
 
 if __name__ == '__main__':
@@ -161,8 +191,13 @@ if __name__ == '__main__':
     # print(resolve_type2(y))
     # print(resolve_value(Int(5)))
     # print(resolve_value(Int(5)))
-    print(resolve_value(Vector[Int]([1, 25])))
-    print(resolve_value(PythonMap[Int, PythonVector[Int]]({2: [1, 2], 1: [2, 3]})))
-    # print(resolve_value(PythonMap[Int, PythonVector[Int]]({1: [2, 2, 3], 2: [1, 2, 3]})))
+    # print(resolve_value(Vector[Int]([1, 25])))
+    # print(resolve_value(PythonMap[Int, PythonVector[Int]]({2: [1, 2], 1: [2, 3]})))
+    print(resolve_value(PythonMap[Int, PythonVector[Int]]({1: [2, 2, 3], 2: [1, 2, 3]})))
     # print(resolve_value(y([[{1: 1}], [{2: 2}], [{3: 3}]])))
     # print(resolve_type(PythonVector[PythonVector[PythonMap[PythonVector[Int], Int]]]))
+    #
+    # x = {2: [1, 2], 1: [2, 3]}
+    # print(builo([]))
+
+

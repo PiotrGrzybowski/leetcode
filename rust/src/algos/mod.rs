@@ -23,3 +23,5 @@ pub mod valid_parentheses;
 pub mod single_number;
 pub mod linked_list_cycle;
 pub mod min_stack;
+pub mod linked_list_cycle;
+pub mod linked_list_cycle;
