@@ -25,7 +25,7 @@ impl MinStack {
         let mut node = Box::new(Node::new(val));
         match &self.top {
             Some(top) => {
-                node.next = Some(*top);
+                // node.next = Some(top);
             }
             None => {
                 self.top = Some(node)

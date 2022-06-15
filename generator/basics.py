@@ -18,29 +18,46 @@ class Vector(Generic[T]):
     name = 'vector'
 
 
-class PythonVector(Generic[T]):
+class PythonVector(Vector[T]):
+    @staticmethod
+    def resolve(generics) -> str:
+        return f"list[{generics[0]}]"
+
     @staticmethod
     def default() -> str:
-        return "[]"
+        return '[]'
 
-class PythonMap(Generic[T]):
-    pass
+    @staticmethod
+    def new(generics, value):
+        return f"[{value}]"
+
+
+class PythonMap(Generic[T, S]):
+    def __init__(self, values: dict[T, S]) -> None:
+        super().__init__()
+        self.values = values
+
+    @staticmethod
+    def resolve(generics) -> str:
+        return f"dict[{generics[0]}, {generics[1]}]"
+
+    @staticmethod
+    def default() -> str:
+        return '{}'
+
+    @staticmethod
+    def new(generics, value):
+        return f"{{{value}}}"
 
 
 class GoVector(Vector[T]):
     @staticmethod
-    def resolve():
-        print("a")
-    # def new(self) -> str:
-    #     return f"[]{self.__dict__['__orig_class__'].__args__[0].name}{{}}"
-    #
-    # @staticmethod
-    # def typename(generic) -> str:
-    #     return f"[]{generic[0]}"
-    #
-    # def smartname(self):
-    #     print(self.__dict__)
-    #     # print(self.__dict__['__orig_class__'])
+    def resolve(generics) -> str:
+        return f"[]{generics[0]}"
+
+    @staticmethod
+    def default() -> str:
+        return 'nil'
 
 
 class RustVector(Vector[T]):
@@ -48,53 +65,104 @@ class RustVector(Vector[T]):
 
 
 class GoMap(Generic[T, S]):
-    def _resolve(self, generic):
-        print(generic.__origin__)
-        for a in generic.__args__:
-            a._resolve()
+    @staticmethod
+    def resolve(generics) -> str:
+        return f"map[{generics[0]}]{generics[1]}"
+
+    @staticmethod
+    def default() -> str:
+        return 'nil'
 
 
 class Int:
-    def __init__(self, value: int) -> None:
-        self.value = value
-
-    def typename(self) -> str:
-        return 'int'
-
-    def val(self) -> str:
-        return str(self.value)
+    def __init__(self, number: int) -> None:
+        self.number = number
 
     @staticmethod
     def resolve():
         return 'int'
 
+    @staticmethod
+    def default() -> str:
+        return '0'
 
-def resolve_generic(generic):
-    def help(generic):
-        origin = generic.__origin__
-        generics = []
-        for a in generic.__args__:
-            if hasattr(a, '__args__'):
-                generics.append(help(a))
-            else:
-                generics.append(a.resolve())
-        return origin.typename(generics)
+    def value(self) -> str:
+        return str(self.number)
 
-    if hasattr(generic, '__orig_class__'):
-        origin = generic.__dict__['__orig_class__']
-        return help(origin)
+    @staticmethod
+    def new(value):
+        return str(value)
+
+
+def resolve_type(alias):
+    if hasattr(alias, '__origin__'):
+        origin = alias.__origin__
+        parameters = alias.__args__
+        parameters = [resolve_type(p) for p in parameters]
+        return origin.resolve(parameters)
     else:
-        return generic.resolve()
+        return alias.resolve()
+
+
+def resolve_type2(alias, value):
+    if hasattr(alias, '__origin__'):
+        origin = alias.__origin__
+        parameters = alias.__args__
+        parameters = [resolve_type2(p, value) for p in parameters]
+        return origin, parameters
+    else:
+        return alias
+
+
+#
+# def resolve_nested_value(alias, value):
+#     if hasattr(alias, '__origin__'):
+#         origin = alias.__origin__
+#
+#         parameters = alias.__args__
+#         parameters = [resolve_nested_value(p, value) for p in parameters]
+#
+#         print(origin)
+#         print(parameters)
+#         # return origin.value(parameters)
+#     else:
+#         return alias.new(value)
+
+def build(alias, generics, value):
+    if generics:
+        alias.new()
+        pass
+    else:
+        return alias.new(value)
+
+
+def resolve_value(value):
+    # print(value.__dict__)
+    if hasattr(value, '__orig_class__'):
+        # print(value.__orig_class__)
+        # print(value.__orig_class__.__dict__)
+        # print(value.__orig_class__.__origin__)
+        # print(value.__orig_class__.__args__)
+        alias = value.__orig_class__
+        resolved, generic = resolve_type2(alias, value)
+
+        return build(resolved, generic, value.values)
+
+    else:
+        return str(value.number)
 
 
 if __name__ == '__main__':
-    x = GoVector[GoVector[GoMap[Int, Int]]]#([[{1: 1}], [{2: 2}], [{3: 3}]])
-    # print(resolve_generic(x))
-
-    print(x.__dict__)
-    # origin = x.__dict__['__orig_class__']
-    # print(x.__dict__['__orig_class__'])
-    print(x.__origin__)
-    print(x.__args__)
-
-
+    x = GoVector[GoVector[GoMap[Int, Int]]]
+    y = PythonVector[PythonVector[PythonMap[Int, Int]]]
+    # ([[{1: 1}], [{2: 2}], [{3: 3}]])
+    #
+    # print(resolve_type(x))
+    # print(resolve_type2(y))
+    # print(resolve_value(Int(5)))
+    # print(resolve_value(Int(5)))
+    print(resolve_value(Vector[Int]([1, 25])))
+    print(resolve_value(PythonMap[Int, PythonVector[Int]]({2: [1, 2], 1: [2, 3]})))
+    # print(resolve_value(PythonMap[Int, PythonVector[Int]]({1: [2, 2, 3], 2: [1, 2, 3]})))
+    # print(resolve_value(y([[{1: 1}], [{2: 2}], [{3: 3}]])))
+    # print(resolve_type(PythonVector[PythonVector[PythonMap[PythonVector[Int], Int]]]))

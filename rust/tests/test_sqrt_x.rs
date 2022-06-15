@@ -9,4 +9,11 @@ fn test_add_binary() {
     assert_eq!(my_sqrt(8), 2);
     assert_eq!(my_sqrt(16), 4);
     assert_eq!(my_sqrt(2147395599), 46339);
+
+    let x: Vec<Vec<i32>> = Vec::new();
+    println!("{}", x.len());
+}
+
+fn a() -> Vec<Vec<i32>> {
+    Vec::new()
 }

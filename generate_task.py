@@ -239,7 +239,7 @@ class Custom:
         return str(self.target)[1:]
 
     def value(self, value):
-        return self.target.value(value)
+        return self.target.number(value)
 
 
 class RustReference(Reference):
@@ -258,7 +258,7 @@ class GoReference(Reference):
         return str(self.target)
 
     def value(self, value):
-        return self.target.value(value)
+        return self.target.number(value)
 
 
 class PythonReference(Reference):
@@ -271,7 +271,7 @@ class RustPointer(Pointer):
         return f"Option<Box<{self.target}>>"
 
     def value(self, value):
-        return f"&{self.target.value(value)}"
+        return f"&{self.target.number(value)}"
 
 
 class GoPointer(Pointer):
@@ -279,7 +279,7 @@ class GoPointer(Pointer):
         return f"*{self.target}"
 
     def value(self, value):
-        return f"{self.target.value(value)}"
+        return f"{self.target.number(value)}"
 
 
 class PythonPointer(Pointer):
@@ -287,7 +287,7 @@ class PythonPointer(Pointer):
         return f"Optional[{self.target}]"
 
     def value(self, value):
-        return self.target.value(value)
+        return self.target.number(value)
 
 
 class Language:
@@ -327,7 +327,7 @@ class Language:
 
     def resolve_value(self, value: Value) -> str:
         reso = self.resolve_type(value.kind)
-        return str(reso.value(value.value))
+        return str(reso.number(value.value))
 
     def resolve_values(self, values: list[Value]):
         return ", ".join([self.resolve_value(value) for value in values])
