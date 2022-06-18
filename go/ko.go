@@ -11,7 +11,15 @@ func abc() [][]map[int]int {
 }
 
 func abdc() map[int]int {
-	return nil
+	return map[int]int{1: 2, 4: 4}
+}
+
+func abdcd() map[int][]int {
+	return map[int][]int{1: {1, 2}, 2: {1, 2}}
+}
+
+func abdcdd() map[int][]string {
+	return map[int][]string{1: {"2", "2", "3"}, 2: {"1", "2", "3"}}
 }
 
 func main() {
