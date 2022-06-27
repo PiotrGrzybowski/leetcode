@@ -24,7 +24,7 @@ class MinStack:
         self.head = self.head.pointer
 
     def top(self) -> int:
-        return self.head.test
+        return self.head.value
 
     def getMin(self) -> int:
         return self.head.minimum

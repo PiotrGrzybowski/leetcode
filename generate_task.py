@@ -156,10 +156,10 @@ class GoVector(Vector):
         return f"[]{self.generic}"
 
     def default_value(self) -> str:
-        return f"return []{self.generic.name()}{{}}"
+        return f"return []{self.generic.function()}{{}}"
 
     def value(self, value) -> str:
-        return f"return []{self.generic.name()}{{{str(value)[1:-1]}}}"
+        return f"return []{self.generic.function()}{{{str(value)[1:-1]}}}"
 
 
 class GoNone:
@@ -216,7 +216,7 @@ class Reference:
 
     @classmethod
     def cast(cls, reference):
-        return cls(reference.target, reference.mutable)
+        return cls(reference.data, reference.mutable)
 
     def value(self, value):
         return str(value)
@@ -228,7 +228,7 @@ class Pointer:
 
     @classmethod
     def cast(cls, pointer):
-        return cls(pointer.target)
+        return cls(pointer.data)
 
 
 class Custom:
@@ -239,7 +239,7 @@ class Custom:
         return str(self.target)[1:]
 
     def value(self, value):
-        return self.target.test(value)
+        return self.target.value(value)
 
 
 class RustReference(Reference):
@@ -258,7 +258,7 @@ class GoReference(Reference):
         return str(self.target)
 
     def value(self, value):
-        return self.target.test(value)
+        return self.target.value(value)
 
 
 class PythonReference(Reference):
@@ -271,7 +271,7 @@ class RustPointer(Pointer):
         return f"Option<Box<{self.target}>>"
 
     def value(self, value):
-        return f"&{self.target.test(value)}"
+        return f"&{self.target.value(value)}"
 
 
 class GoPointer(Pointer):
@@ -279,7 +279,7 @@ class GoPointer(Pointer):
         return f"*{self.target}"
 
     def value(self, value):
-        return f"{self.target.test(value)}"
+        return f"{self.target.value(value)}"
 
 
 class PythonPointer(Pointer):
@@ -287,7 +287,7 @@ class PythonPointer(Pointer):
         return f"Optional[{self.target}]"
 
     def value(self, value):
-        return self.target.test(value)
+        return self.target.value(value)
 
 
 class Language:
@@ -310,24 +310,24 @@ class Language:
 
     def resolve_reference(self, reference):
         return self.mappings[Reference](
-            self.resolve_type(reference.target), reference.mutable
+            self.resolve_type(reference.data), reference.mutable
         )
 
     def resolve_pointer(self, pointer):
-        return self.mappings[Pointer](self.resolve_type(pointer.target))
+        return self.mappings[Pointer](self.resolve_type(pointer.data))
 
     def resolve_vector(self, vector):
         return self.mappings[Vector](self.resolve_type(vector.generic))
 
     def resolve_custom(self, custom):
-        return custom.target()
+        return custom.data()
 
     def resolve_arguments(self, arguments: list[Argument]) -> str:
         return ", ".join([self.resolve_argument(argument) for argument in arguments])
 
     def resolve_value(self, value: Value) -> str:
         reso = self.resolve_type(value.kind)
-        return str(reso.test(value.value))
+        return str(reso.value(value.value))
 
     def resolve_values(self, values: list[Value]):
         return ", ".join([self.resolve_value(value) for value in values])
@@ -355,7 +355,7 @@ class Rust(Language):
         return f"{argument.name}: {self.resolve_type(argument.kind)}"
 
     def resolve_output_type(self, output) -> str:
-        return f"-> {self.resolve_type(output).name()}" if output else ""
+        return f"-> {self.resolve_type(output).function()}" if output else ""
 
     def function_signature(
             self, function: str, arguments: list[Argument], output=None
@@ -376,7 +376,7 @@ class Go(Language):
         return f"{argument.name} {self.resolve_type(argument.kind)}"
 
     def resolve_output_type(self, output) -> str:
-        return f"{self.resolve_type(output).name()}" if output else ""
+        return f"{self.resolve_type(output).function()}" if output else ""
 
     def function_signature(
             self, function: str, arguments: list[Argument], output=None
@@ -395,7 +395,7 @@ class Python(Language):
         return f"{argument.name}: {self.resolve_type(argument.kind)}"
 
     def resolve_output_type(self, output) -> str:
-        return f"-> {self.resolve_type(output).name()}" if output else ""
+        return f"-> {self.resolve_type(output).function()}" if output else ""
 
     def function_signature(
             self, function: str, arguments: list[Argument], output=None
